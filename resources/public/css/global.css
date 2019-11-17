@@ -1,0 +1,35 @@
+table.fixed {
+    table-layout: fixed;
+}
+
+th {
+    background-color: #eeeeee;
+}
+
+.inline-block {
+    display: inline-block;
+    vertical-align: top;
+    margin: 10px;
+}
+
+.container {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 2rem;
+    max-width: initial;
+}
+
+.card-header {
+    text-align: center;
+}
+
+.card-body {
+    text-align: center;
+}
+
+.row {
+    text-align: center;
+    margin-top: 1.5rem;
+    /* width: "100%"; */
+    /* height: "auto"; */
+}

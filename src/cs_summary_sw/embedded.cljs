@@ -1,0 +1,12 @@
+(ns cs-summary-sw.embedded)
+
+(def credentials {:client_x509_cert_url "https://www.googleapis.com/robot/v1/metadata/x509/bdc-qss%40bdc-gdapi.iam.gserviceaccount.com",
+                  :token_uri "https://oauth2.googleapis.com/token",
+                  :type "service_account",
+                  :private_key_id "4637a10fe4d46d88d8d292e8b66e01903b027a9e",
+                  :auth_provider_x509_cert_url "https://www.googleapis.com/oauth2/v1/certs",
+                  :client_email "bdc-qss@bdc-gdapi.iam.gserviceaccount.com",
+                  :client_id "101235057212960961834",
+                  :project_id "bdc-gdapi",
+                  :private_key "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC1y2EtnwSajA8c\nzJsxcMRIu+VFrXCWGqK4k775yaSR0NBBoYXFvbBQT/3TOw3Tb8Ha4qjNZBfGvbg+\nqwNgbK4OqkTyP7CdTw6qZkFcTQfYLIR/RfqwIrj7MUKcGKRTDSZ73zjjLE5LxvHX\n5GFMM913agpwPHYE59fE0mpytj58n5qc1aRoYjH26OfqDdQeuNeHtJXwza2g1OqN\nmk6/oXmg5KFjc4mzQ1c/ne8VtqRy9udpGpoHfNPk49l22VYSxANAa2nx37W0IHZS\nTHZbu+FpFIqLgnp1XpFx6HzVfA82MQruuyVLLd1s78ATlSqucSegpWWtp+L+y4FT\nEiYY1/QBAgMBAAECggEAPRurw0eQJxkMXWxjgGd8+0v5ogXOcg5rAytaxyEiSgeM\ncXtHebQtB5oT4sSXfaqz2Y1WG5BZM6uDOsGGZYuyqGhQu7Nv/TjdX6b2sn2MNPyl\n3xhZT4qkbn9c+haIaghiFsJun2I9wVgS5DS3BgPrHmBNOPQB4d1C2Ly4Hm4nLAFy\nWQj5sl0t2EBwv71NyvWnc3WB1vOWMAni4UjkJoumJkMxbOzLuOrIFNF97DhEG0js\n58pkP+9S3iCfBog8PvLvh14/d/qNR02KzJos1e/LPIe7Sk7tTmr0djMi3spoyohZ\nVE5tkhfYrAHvT1Pfrk8N7zSBmG36JR9yezXN7SlNbwKBgQDyLcKptWlpRId54bHz\nniwXoEpq6NVhoIDy38rJm12YNkNisAdTdSbgUmfTQs7nAB/FdIxLQiCtHP/Z4OJG\n65hl+uYPITtwh/MIRuKH7T+i7YLLZGjPxLZSd1a0Yh7ML2ZosyYrcQh4mlGMORKX\nOe/ryQHhDgK1yQkx1FJNPYMfSwKBgQDAK2cPCwwScW3A7ucoT0i79pSQI2JaMdHu\nkPb2NmzKCtdyp/BVKECg4dzhq8afcXIMDDBpTCGRTyCps1zUrNMd1aT6DsiYAdbX\nnKUR++ucHQXkhlMAmrPYTrDwALjYIKzZ7GyK+9viLYO1lD+p1yUkXYc8QwJi0kFI\npg2qAI5OYwKBgQChXNIup7yDsnCeSj56t3Jjj57mGxtKQFqK+Ygxyr6TE9zUXbuT\n5SQxJVcekY4wpomE1EJCRt5k2kSzVL8QSBw0Hve5Lwhe04aghjKcJP1Yvu5+PPoF\nLenZisCP0iz5GcAflPaizV66lQAu8Tws3SK6NSV2YhJ2M2xX8kOgSZMbfwKBgQCk\njQXEldsSd9pZWLjLhYhsmyp/ei0fuoVe2Pb/wX7KSxpNbYyX/s3IdV8kRmjf4s6b\njlxt7ejYen8nkRSucAafB3ArRzlxIDINkm6uxZ7soNWI55RvcgkJ8egEuzmMp/4a\n5R3UrPGN7RdZBsa08is1xnikm2SRpiSMxtPwfGVerQKBgEaSGZcC7g5oy4EUVIvI\n8FW8bPfUOD1as4TSc1ORWe5x9u3uIFUk9JE10OBKq/Pi9x3snxVKetaOY6Zul690\n8mkcUzA/dHdD4iRTkpk0BWqhk5PGlRG1sODpDJz4D06AHxuN6CQ/1z9m3/ZsmJo5\nE59kKxDNBrQSthz0LvBV9ZBE\n-----END PRIVATE KEY-----\n",
+                  :auth_uri "https://accounts.google.com/o/oauth2/auth"})
