@@ -14,6 +14,7 @@
     "dependencies": {
         "express": "^4.17.1",
         "google-auth-library": "^5.5.1",
+        "googleapis": "^45.0.0",
         "puppeteer": "^2.0.0",
         "react": "16.9.0",
         "react-dom": "16.9.0",

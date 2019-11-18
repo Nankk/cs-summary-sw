@@ -1,18 +1,19 @@
 (ns cs-summary-sw.gapis
   (:require
    ["google-auth-library" :refer (JWT GoogleAuth)]
-   ["google-drive" :as google-drive]
-   ["google-sheets" :as google-sheets]
+   ["googleapis" :as googleapis]
    [cs-summary-sw.embedded :as embedded]
    [cljs.core.async :as async :refer [>! go chan]]))
 
 ;; Authentication & api initialization ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def scopes #js ["https://www.googleapis.com/auth/drive"])
 
 (def auth (JWT. (embedded/credentials :client_email) nil (embedded/credentials :private_key) scopes))
 
 ;; Sheets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def sheets (let [constructor (. google-sheets/sheets_v4 -Sheets)]
+
+(def sheets (let [constructor (. googleapis/sheets_v4 -Sheets)]
               (constructor. (js-obj "version" "v4" "auth" auth))))
 
 (defn sheets-get
@@ -51,10 +52,7 @@
          cbf callback-fn]
      (. (.. sheets -spreadsheets -values) update params cbf))))
 
-;; (. js/console log (.. sheets -spreadsheets -values -update))
-
-;; Drive ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def drive (let [constructor (. google-drive/drive_v3 -Drive)]
+(def drive (let [constructor (. googleapis/drive_v3 -Drive)]
              (constructor. (js-obj "version" "v3" "auth" auth))))
 
 (defn drive-view-url [content-id]
@@ -90,12 +88,4 @@
          cbf callback-fn
          files (. drive -files)]
      (. files get params cbf))))
-
-;; (let [params (clj->js {:pageSize 100
-;;                        :fields "files(name, id)"})
-;;       files (. drive -files)]
-;;   (. files list params
-;;      (fn [err res]
-;;        (when err (throw err))
-;;        (. js/console log res))))
 
