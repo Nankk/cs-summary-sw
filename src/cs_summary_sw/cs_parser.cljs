@@ -43,8 +43,8 @@
         target (lines 2)]
     {:critical     (js/parseInt (subs target 36 40))
      :weapon-power (js/parseInt (subs target 29 34))
-     :atk          (js/parseInt (subs target 41 46))
-     :dex          (js/parseInt (subs target 24 28))}))
+     :bonus        (js/parseInt (subs target 41 46))
+     :accuracy     (js/parseInt (subs target 24 28))}))
 
 (defn- parse-armor [text]
   (let [lines  (str/split-lines text)
@@ -66,13 +66,14 @@
 
 (defn- parse-skills [text]
   (let [lines  (str/split-lines text)
-        targets (subvec lines 2)]
-    {:skills (let [re #"\[p([0-9]+)\]([^ ]+)\s*:\s*([^ ]+)\s*:"]
-               (vec (for [line targets
-                          :when (re-find re line)]
-                      (let [match (re-find re line)]
-                        {:name (str/trim (match 2))
-                         :description (str/trim (match 3))}))))}))
+        targets (subvec lines 2)
+        skills {:skills (let [re #"\[p([0-9]+)\]([^ ]+)\s*:\s*([^ ]+)\s*:"]
+                          (vec (for [line targets
+                                     :when (re-find re line)]
+                                 (let [match (re-find re line)]
+                                   {:name (str/trim (match 2))
+                                    :description (str/trim (match 3))}))))}]
+    skills))
 
 (defn- parse-params [text]
   (let [lines        (str/split-lines text)
@@ -131,6 +132,7 @@
 ;; Some data might not exist needs nil-check (e.g. magics)
 
 (defn chara-data [text-raw]
+  (println "chara-data")
   (let [text (str/replace text-raw #"　" "  ")] ;; THE MADNESS
     (-> {}
         (merge (parse-weapon (weapon-part text)))

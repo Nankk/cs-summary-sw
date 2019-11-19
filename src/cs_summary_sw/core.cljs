@@ -69,7 +69,7 @@
           [:span [:span {:style {:color "#999999" :font-size "65%"}} "2D6+ "] (data :initiative)]
           [:span [:span {:style {:color "#999999" :font-size "65%"}} "2D6+ "] (data :reg-bio)]
           [:span [:span {:style {:color "#999999" :font-size "65%"}} "2D6+ "] (data :reg-spirit)]
-          [:span [:span {:style {:color "#999999" :font-size "65%"}} "2D6+ "] (data :dex)]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} "2D6+ "] (data :accuracy)]
           [:span [:span {:style {:color "#999999" :font-size "65%"}} "2D6+ "] (data :flee)]
           (str "　" (data :def))]]]]
       [:div
@@ -85,14 +85,32 @@
                            ^{:key (next-key)} [(magic :name) (magic :level) (magic :power)]))))]]]]]]
    [:div.card {:class "inline-block" :style {:width 800 :height 400}}
     [:div.card-body {:style {:width 800}}
-     [:div.inline-block
-      [:div
-       [:div.inline-block
-        [table-template true
-         (vec (cons (vec (concat ["C値" "威力"] (vec (range 3 13)) ["追加"]))
-                    (conj [] (vec (concat [(data :critical) (data :weapon-power)]
-                                          (const/weapon-rating-table (data :weapon-power))
-                                          [(str "+" (data :atk))])))))]]]]]]])
+     [:div
+      [:div.inline-block
+       [table-template false
+        (vec (cons (vec (concat ["【威力】" "C値"] (vec (range 3 13)) ["追加"]))
+                   (conj [] (vec (concat [(data :weapon-power) (data :critical)]
+                                         (const/weapon-rating-table (data :weapon-power))
+                                         [(str "+" (data :bonus))])))))]]]
+     [:div
+      [:div.inline-block
+       [table-template false
+        [["【探索判定パッケージ】" "技巧" "運動" "観察" "知識"]
+         [[:span [:span {:style {:color "#999999" :font-size "65%"}} "スカウト　　"] (get-in data [:package-values :scout])]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} "A　"] (get-in data [:package-values :a])]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} "C　"] (get-in data [:package-values :c])]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} "E　"] (get-in data [:package-values :e])]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} " 　"] "-"]]
+         [[:span [:span {:style {:color "#999999" :font-size "65%"}} "レンジャー　"] (get-in data [:package-values :ranger])]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} "B　"] (get-in data [:package-values :b])]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} "D　"] (get-in data [:package-values :d])]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} "F　"] (get-in data [:package-values :f])]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} " 　"] "-"]]
+         [[:span [:span {:style {:color "#999999" :font-size "65%"}} "セージ　　　"] (get-in data [:package-values :sage])]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} " 　"] "-"]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} " 　"] "-"]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} " 　"] "-"]
+          [:span [:span {:style {:color "#999999" :font-size "65%"}} "G　"] (get-in data [:package-values :g])]]]]]]]]])
 
 (defn- get-all-cs-urls []
   (println "get-all-cs-urls")
@@ -121,7 +139,7 @@
               button     (<p! (. page $ selector))
               _          (<p! (. button evaluate (fn [b] (. b click))))
               p-content  (<p! (. page evaluate (fn [] (.. js/document -body -innerHTML))))
-              _          (<! (timeout 500)) ; Ugly. Quite ugly.
+              _          (<! (timeout 1200)) ; Ugly. Quite ugly.
               cs-page    (clj->js ((js->clj (<p! (. browser pages))) 2))
               cs-content (<p! (. cs-page evaluate (fn [] (. (. js/document querySelector "pre") -innerHTML))))
               _          (println "Yomikomi owata ＼(^o^)／")]
@@ -159,6 +177,24 @@
           (>! ch char-id)))
     ch))
 
+(defn- package-values [data]
+  (let [dex    (get-in data [:params :bonus :dex])
+        agi    (get-in data [:params :bonus :agi])
+        int    (get-in data [:params :bonus :int])
+        scout  (:level (or (first (filter #(= (% :name) "スカウト") (data :abilities))) {:level 0}))
+        ranger (:level (or (first (filter #(= (% :name) "レンジャー") (data :abilities))) {:level 0}))
+        sage   (:level (or (first (filter #(= (% :name) "セージ") (data :abilities))) {:level 0}))]
+    {:scout  scout
+     :ranger ranger
+     :sage   sage
+     :a      (if (zero? scout) 0 (+ dex scout))
+     :b      (if (zero? ranger) 0 (+ dex ranger))
+     :c      (if (zero? scout) 0 (+ agi scout))
+     :d      (if (zero? ranger) 0 (+ agi ranger))
+     :e      (if (zero? scout) 0 (+ int scout))
+     :f      (if (zero? ranger) 0 (+ int ranger))
+     :g      (if (zero? sage) 0 (+ int sage))}))
+
 (defn- create-cs-png [console-id]
   (println "create-cs-png")
   (let [ch (chan)]
@@ -166,14 +202,15 @@
               cs-url      (<! (get-cs-url char-id))
               cs-text     (<! (scrape-cs-text cs-url))
               cs-data     (parser/chara-data cs-text)
+              cs-data+    (assoc cs-data :package-values (package-values cs-data)) ; append package values
               out-name    (str "cs-" console-id ".png")
               browser     (<p! (. ppt launch (clj->js {;; :headless false
                                                        :args ["--no-sandbox"
                                                               "--disable-setuid-sandbox"]})))
               page        (<p! (. browser newPage))
-              _ (<p! (. page setViewport (clj->js {:width 1800 :height 1100})))
+              _           (<p! (. page setViewport (clj->js {:width 1800 :height 1100})))
               _           (<p! (. page goto (str "file://" root "/public/index.html")))
-              elem-txt    (rdom/render-to-string [layouted-cs-hiccup cs-data])
+              elem-txt    (rdom/render-to-string [layouted-cs-hiccup cs-data+])
               target-elem (<p! (. page $ "#app"))
               _           (. page evaluate (fn [elem]
                                              (let [target (. js/document getElementById "app")]
