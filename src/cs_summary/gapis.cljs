@@ -1,8 +1,8 @@
-(ns cs-summary-sw.gapis
+(ns cs-summary.gapis
   (:require
    ["google-auth-library" :refer (JWT GoogleAuth)]
    ["googleapis" :as googleapis]
-   [cs-summary-sw.embedded :as embedded]
+   [cs-summary.embedded :as embedded]
    [cljs.core.async :as async :refer [>! go chan]]))
 
 ;; Authentication & api initialization ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -51,6 +51,8 @@
                                               :values values})})
          cbf callback-fn]
      (. (.. sheets -spreadsheets -values) update params cbf))))
+
+;; Drive ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def drive (let [constructor (. googleapis/drive_v3 -Drive)]
              (constructor. (js-obj "version" "v3" "auth" auth))))

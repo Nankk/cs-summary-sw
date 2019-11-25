@@ -1,4 +1,4 @@
-(ns cs-summary-sw.cs-parser
+(ns cs-summary.sw-parser
   (:require [clojure.string :as str]))
 
 ;; Text extraction ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -67,7 +67,7 @@
 (defn- parse-skills [text]
   (let [lines  (str/split-lines text)
         targets (subvec lines 2)
-        skills {:skills (let [re #"\[p([0-9]+)\]([^ ]+)\s*:\s*([^ ]+)\s*:"]
+        skills {:skills (let [re #"\[p([^\]]+)\]\s*([^ ]+)\s*:\s*([^ ]+)\s*:"]
                           (vec (for [line targets
                                      :when (re-find re line)]
                                  (let [match (re-find re line)]

@@ -1,4 +1,4 @@
-(ns cs-summary-sw.core
+(ns cs-summary.core
   (:require
    ["express" :as express]
    [clojure.string :as str]
@@ -9,13 +9,15 @@
    [cljs.core.async :as async :refer [>! <! go chan timeout go-loop]]
    [async-interop.interop :refer-macros [<p!]]
    ["stream" :as stream]
-   [cs-summary-sw.gapis :as gapis]
-   [cs-summary-sw.cs-parser :as parser]
-   [cs-summary-sw.const :as const]))
+   [cs-summary.gapis :as gapis]
+   [cs-summary.sw-parser :as sparser]
+   [cs-summary.const :as const]
+   [cs-summary.macros :refer [throw-err] :refer-macros [<?]]
+   [cs-summary.coc-parser :as cparser]))
 
 (def root js/__dirname)
 
-;; Character sheet ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SW character sheet ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def bind-table "console-char-table!")
 (def data-table "char-data-table!")
@@ -115,7 +117,7 @@
 (defn- get-all-cs-urls []
   (println "get-all-cs-urls")
   (let [ch (chan)]
-    (go (let [res (<! (gapis/sheets-get db-id (str data-table "B:B")))
+    (go (let [res (<? (gapis/sheets-get db-id (str data-table "B:B")))
               vs  (into [] (rest (js->clj (.. res -data -values))))]
           (>! ch vs)))
     ch))
@@ -123,7 +125,7 @@
 (defn- get-cs-url [char-id]
   (println "get-cs-url")
   (let [ch (chan)]
-    (go (let [urls (<! (get-all-cs-urls))]
+    (go (let [urls (<? (get-all-cs-urls))]
           (>! ch ((urls (dec char-id)) 0))))
     ch))
 
@@ -139,7 +141,7 @@
               button     (<p! (. page $ selector))
               _          (<p! (. button evaluate (fn [b] (. b click))))
               p-content  (<p! (. page evaluate (fn [] (.. js/document -body -innerHTML))))
-              _          (<! (timeout 1200)) ; Ugly. Quite ugly.
+              _          (<? (timeout 2000)) ; Ugly. Quite ugly.
               cs-page    (clj->js ((js->clj (<p! (. browser pages))) 2))
               cs-content (<p! (. cs-page evaluate (fn [] (. (. js/document querySelector "pre") -innerHTML))))
               _          (println "Yomikomi owata ＼(^o^)／")]
@@ -151,7 +153,7 @@
 (defn- set-binded-char-id [console-id new-id]
   (println "set-binded-char-id")
   (let [ch (chan)]
-    (go (let [res (<! (gapis/sheets-update
+    (go (let [res (<? (gapis/sheets-update
                        db-id
                        (str bind-table "B" (inc console-id) ":B" (inc console-id))
                        (clj->js [new-id])))]
@@ -161,7 +163,7 @@
 (defn- get-all-char-ids []
   (println "get-all-char-ids")
   (let [ch (chan)]
-    (go (let [res (<! (gapis/sheets-get db-id (str bind-table "B:B")))
+    (go (let [res (<? (gapis/sheets-get db-id (str bind-table "B:B")))
               _ (println "aaa")
               vs  (into [] (rest (js->clj (.. res -data -values))))
               _ (println vs)]
@@ -171,7 +173,7 @@
 (defn- get-binded-char-id [console-id]
   (println "get-binded-char-id")
   (let [ch (chan)]
-    (go (let [all (<! (get-all-char-ids))
+    (go (let [all (<? (get-all-char-ids))
               char-id (get-in all [(dec console-id) 0])]
           (println char-id)
           (>! ch char-id)))
@@ -198,10 +200,10 @@
 (defn- create-cs-png [console-id]
   (println "create-cs-png")
   (let [ch (chan)]
-    (go (let [char-id     (<! (get-binded-char-id console-id))
-              cs-url      (<! (get-cs-url char-id))
-              cs-text     (<! (scrape-cs-text cs-url))
-              cs-data     (parser/chara-data cs-text)
+    (go (let [char-id     (<? (get-binded-char-id console-id))
+              cs-url      (<? (get-cs-url char-id))
+              cs-text     (<? (scrape-cs-text cs-url))
+              cs-data     (sparser/chara-data cs-text)
               cs-data+    (assoc cs-data :package-values (package-values cs-data)) ; append package values
               out-name    (str "cs-" console-id ".png")
               browser     (<p! (. ppt launch (clj->js {;; :headless false
@@ -216,7 +218,7 @@
                                              (let [target (. js/document getElementById "app")]
                                                (set! (. target -innerHTML) elem))) elem-txt)]
           (println "Screehshot...")
-          (<! (timeout 1000))
+          (<? (timeout 500))
           (<p! (. page screenshot (clj->js {:path (str "./public/img/" out-name)
                                             :clip {:x      0
                                                    :y      0
@@ -230,38 +232,48 @@
 (defn- change-binded-char-id [console-id diff]
   (println "change-binded-char-id")
   (let [ch (chan)]
-    (go (let [char-id (<! (get-binded-char-id (dec console-id)))]
-          (<! (set-binded-char-id console-id (+ char-id diff)))))
+    (go (let [char-id (<? (get-binded-char-id (dec console-id)))]
+          (<? (set-binded-char-id console-id (+ char-id diff)))))
     ch))
 
 (defn- return-cs-summary [query res]
   (println "return-cs-summary")
-  (go (let [console-id (:console_id query)
-            png-name   (<! (create-cs-png console-id))
-            png        (. fs createReadStream (str "./public/img/" png-name))
-            ps         (. stream PassThrough)]
-        (. stream pipeline png ps
-           (fn [err] (when err (. js/console log err) (. res sendStatus 400))))
-        (. ps pipe res))))
+  (try
+    (go (let [console-id (:console_id query)
+              png-name   (<? (create-cs-png console-id))
+              png        (. fs createReadStream (str "./public/img/" png-name))
+              ps         (. stream PassThrough)]
+          (. stream pipeline png ps
+             (fn [err] (when err (. js/console log err) (. res sendStatus 400))))
+          (. ps pipe res)))
+    (catch js/Object e
+      (. (. res status 500) end))))
 
 (defn- handle-cs-query [req res]
   (println "handle-cs-query")
-  (go (let [query      (js->clj (. req -query) :keywordize-keys true)
+  (go
+    (try
+      (let [query      (js->clj (. req -query) :keywordize-keys true)
             console-id (:console_id query)
             type       (:type query)]
         (if console-id
           (do
             (case type
-              "next" (<! (change-binded-char-id console-id 1))
-              "prev" (<! (change-binded-char-id console-id -1))
+              "next" (<? (change-binded-char-id console-id 1))
+              "prev" (<? (change-binded-char-id console-id -1))
               (. js/console log "No type specified."))
             (return-cs-summary query res))
           (. (. res status 400) end)) ; console-idすら無かったら流石におかしいのでエラー
-        )))
+        )
+      (catch js/Object e
+        (. (. res status 500) end)))))
 
-;; Judgement package ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CoC character sheet ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- handle-jp-query [req res])
+(defn- handle-coc-cs-query [req res]
+  (println "handle-coc-cs-query")
+
+  )
 
 ;; Main ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -283,7 +295,7 @@
 
     (. app get "/character-sheet" handle-cs-query)
 
-    (. app get "/judgement-package" handle-jp-query)
+    (. app get "/coc-character-sheet" handle-coc-cs-query)
 
     (when (some? @server)
       (. @server close)

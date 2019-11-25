@@ -1,4 +1,4 @@
-(ns cs-summary-sw.const)
+(ns cs-summary.const)
 
 ;; Rating table from 0 to 50; index corresponds to the weapon power
 (def weapon-rating-table [[0 0 0 1 2 2 3 3 4 4]

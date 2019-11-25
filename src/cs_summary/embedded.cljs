@@ -1,4 +1,4 @@
-(ns cs-summary-sw.embedded)
+(ns cs-summary.embedded)
 
 (def credentials {:client_x509_cert_url "https://www.googleapis.com/robot/v1/metadata/x509/bdc-qss%40bdc-gdapi.iam.gserviceaccount.com",
                   :token_uri "https://oauth2.googleapis.com/token",
