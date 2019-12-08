@@ -1,5 +1,15 @@
 (ns cs-summary.const)
 
+(def root js/__dirname)
+
+(def sw-bind-table "console-char-table!")
+(def sw-data-table "char-data-table!")
+(def sw-db-id "1oMDM0k9TfPREXhXHIrTUPCpxmZpwmhq79yiCkt1JdMM")
+
+(def coc-bind-table "console-char-table!")
+(def coc-data-table "char-data-table!")
+(def coc-db-id "1KSIxjRdT9kr3wUER9hnNjsYKP4sDeJ9gDi5goMNzv4U")
+
 ;; Rating table from 0 to 50; index corresponds to the weapon power
 (def weapon-rating-table [[0 0 0 1 2 2 3 3 4 4]
                           [0 0 0 1 2 3 3 3 4 4]

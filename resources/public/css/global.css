@@ -1,9 +1,15 @@
-body {
-    font-size: 1.1em;
+/* body { */
+/*     font-size: 1.1em; */
+/* } */
+
+.strong {
+    font-size: 120%;
+    font-weight: bold;
 }
 
-table.fixed {
-    table-layout: fixed;
+h4 {
+    margin-left: 0.5rem;
+    margin-bottom: 1rem;
 }
 
 th {

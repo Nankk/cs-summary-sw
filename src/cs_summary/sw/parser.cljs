@@ -1,4 +1,4 @@
-(ns cs-summary.sw-parser
+(ns cs-summary.sw.parser
   (:require [clojure.string :as str]))
 
 ;; Text extraction ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

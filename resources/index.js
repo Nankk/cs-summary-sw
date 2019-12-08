@@ -3,14 +3,14 @@
 var shadow$provide = {};
 
 var SHADOW_IMPORT_PATH = __dirname + '/public/js/compiled/cljs-runtime';
-if (__dirname == '.') { SHADOW_IMPORT_PATH = "/home/nankk/OneDrive/BGC/tech-group/apps/cs-summary/resources/public/js/compiled/cljs-runtime"; }
+if (__dirname == '.') { SHADOW_IMPORT_PATH = "/home/nankk/OneDrive/bgc/tech-group/apps/cs-summary/resources/public/js/compiled/cljs-runtime"; }
 global.$CLJS = global;
 global.shadow$provide = {};
 try {require('source-map-support').install();} catch (e) {console.warn('no "source-map-support" (run "npm install source-map-support --save-dev" to get it)');}
 
 global.CLOSURE_NO_DEPS = true;
 
-global.CLOSURE_DEFINES = {"shadow.cljs.devtools.client.env.repl_pprint":false,"shadow.cljs.devtools.client.env.devtools_url":"","shadow.cljs.devtools.client.env.autoload":true,"shadow.cljs.devtools.client.env.proc_id":"7b3a70d2-c14b-474a-bcfb-b30654785544","goog.ENABLE_DEBUG_LOADER":false,"shadow.cljs.devtools.client.env.server_port":9630,"shadow.cljs.devtools.client.env.use_document_host":true,"shadow.cljs.devtools.client.env.module_format":"goog","goog.LOCALE":"en","re_frame.trace.trace_enabled_QMARK_":true,"shadow.cljs.devtools.client.env.build_id":"main","shadow.cljs.devtools.client.env.ignore_warnings":false,"goog.DEBUG":true,"cljs.core._STAR_target_STAR_":"nodejs","shadow.cljs.devtools.client.env.ssl":false,"shadow.cljs.devtools.client.env.enabled":true,"shadow.cljs.devtools.client.env.server_host":"localhost","goog.TRANSPILE":"never"};
+global.CLOSURE_DEFINES = {"shadow.cljs.devtools.client.env.repl_pprint":false,"shadow.cljs.devtools.client.env.devtools_url":"","shadow.cljs.devtools.client.env.autoload":true,"shadow.cljs.devtools.client.env.proc_id":"3fdb051f-3cb0-420b-9604-a07491ef8de5","goog.ENABLE_DEBUG_LOADER":false,"shadow.cljs.devtools.client.env.server_port":9631,"shadow.cljs.devtools.client.env.use_document_host":true,"shadow.cljs.devtools.client.env.module_format":"goog","goog.LOCALE":"en","re_frame.trace.trace_enabled_QMARK_":true,"shadow.cljs.devtools.client.env.build_id":"main","shadow.cljs.devtools.client.env.ignore_warnings":false,"goog.DEBUG":true,"cljs.core._STAR_target_STAR_":"nodejs","shadow.cljs.devtools.client.env.ssl":false,"shadow.cljs.devtools.client.env.enabled":true,"shadow.cljs.devtools.client.env.server_host":"localhost","goog.TRANSPILE":"never"};
 
 var goog = global.goog = {};
 
@@ -2185,20 +2185,8 @@ SHADOW_IMPORT("cljs.tools.reader.edn.js");
 SHADOW_IMPORT("cljs.reader.js");
 SHADOW_IMPORT("shadow.cljs.devtools.client.node.js");
 SHADOW_IMPORT("shadow.js.shim.module$express.js");
+SHADOW_IMPORT("shadow.js.shim.module$stream.js");
 SHADOW_IMPORT("shadow.js.shim.module$fs.js");
-SHADOW_IMPORT("shadow.js.shim.module$react.js");
-SHADOW_IMPORT("reagent.debug.js");
-SHADOW_IMPORT("reagent.impl.util.js");
-SHADOW_IMPORT("reagent.impl.batching.js");
-SHADOW_IMPORT("clojure.set.js");
-SHADOW_IMPORT("reagent.ratom.js");
-SHADOW_IMPORT("reagent.impl.component.js");
-SHADOW_IMPORT("reagent.impl.template.js");
-SHADOW_IMPORT("shadow.js.shim.module$react_dom.js");
-SHADOW_IMPORT("reagent.dom.js");
-SHADOW_IMPORT("reagent.core.js");
-SHADOW_IMPORT("shadow.js.shim.module$react_dom$server.js");
-SHADOW_IMPORT("reagent.dom.server.js");
 SHADOW_IMPORT("shadow.js.shim.module$puppeteer.js");
 SHADOW_IMPORT("cljs.core.async.impl.protocols.js");
 SHADOW_IMPORT("cljs.core.async.impl.buffers.js");
@@ -2215,15 +2203,31 @@ SHADOW_IMPORT("cljs.core.async.impl.timers.js");
 SHADOW_IMPORT("cljs.core.async.impl.ioc_helpers.js");
 SHADOW_IMPORT("cljs.core.async.js");
 SHADOW_IMPORT("async_interop.interop.js");
-SHADOW_IMPORT("shadow.js.shim.module$stream.js");
+SHADOW_IMPORT("shadow.js.shim.module$react.js");
+SHADOW_IMPORT("reagent.debug.js");
+SHADOW_IMPORT("reagent.impl.util.js");
+SHADOW_IMPORT("reagent.impl.batching.js");
+SHADOW_IMPORT("clojure.set.js");
+SHADOW_IMPORT("reagent.ratom.js");
+SHADOW_IMPORT("reagent.impl.component.js");
+SHADOW_IMPORT("reagent.impl.template.js");
+SHADOW_IMPORT("shadow.js.shim.module$react_dom.js");
+SHADOW_IMPORT("reagent.dom.js");
+SHADOW_IMPORT("reagent.core.js");
+SHADOW_IMPORT("shadow.js.shim.module$react_dom$server.js");
+SHADOW_IMPORT("reagent.dom.server.js");
 SHADOW_IMPORT("shadow.js.shim.module$google_auth_library.js");
 SHADOW_IMPORT("shadow.js.shim.module$googleapis.js");
 SHADOW_IMPORT("cs_summary.embedded.js");
 SHADOW_IMPORT("cs_summary.gapis.js");
-SHADOW_IMPORT("cs_summary.sw_parser.js");
 SHADOW_IMPORT("cs_summary.const.js");
 SHADOW_IMPORT("cs_summary.macros.js");
-SHADOW_IMPORT("cs_summary.coc_parser.js");
+SHADOW_IMPORT("cs_summary.sw.parser.js");
+SHADOW_IMPORT("cs_summary.db_remote.js");
+SHADOW_IMPORT("cs_summary.util.js");
+SHADOW_IMPORT("cs_summary.sw.png_maker.js");
+SHADOW_IMPORT("cs_summary.coc.parser.js");
+SHADOW_IMPORT("cs_summary.coc.png_maker.js");
 SHADOW_IMPORT("cs_summary.core.js");
 SHADOW_IMPORT("shadow.module.main.append.js");
 
