@@ -62,7 +62,6 @@
       [table-template true :center
        [(map (comp str/upper-case name) (keys (data :params)))
         (vals (data :params))]]]
-     [:div {:style {:height 10}}]
      [:div {:style {:text-align "left"}} [:h4 [:span.strong "探索 "] "技能リスト"]]
      [skills-template data 5 :exploration]
      [skills-template data 5 :negotiation]
