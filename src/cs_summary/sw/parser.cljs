@@ -130,7 +130,6 @@
 ;; Main ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Some data might not exist needs nil-check (e.g. magics)
-
 (defn chara-data [text-raw]
   (println "chara-data")
   (let [text (str/replace text-raw #"　" "  ")] ;; THE MADNESS

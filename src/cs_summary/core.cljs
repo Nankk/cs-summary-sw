@@ -65,8 +65,7 @@
                 "prev" (<? (remote/change-binded-char-id console-id -1 :coc))
                 (. js/console log "No type specified."))
               (return-cs-summary query res :coc))
-            (. (. res status 400) end))
-          )
+            (. (. res status 400) end)))
         (catch js/Object e
           (. (. res status 500) end)))))
 

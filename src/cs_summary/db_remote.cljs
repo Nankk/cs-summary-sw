@@ -12,9 +12,9 @@
   (println "get-all-cs-urls")
   (let [ch (chan)]
     (go (let [
-              db-id      (if (= game :sw) const/sw-db-id const/coc-db-id)
+              sheet-id      (if (= game :sw) const/sw-sheet-id const/coc-sheet-id)
               data-table (if (= game :sw) const/sw-data-table const/coc-data-table)
-              res        (<? (gapis/sheets-get db-id (str data-table "B:B")))
+              res        (<? (gapis/sheets-get sheet-id (str data-table "B:B")))
               vs         (into [] (rest (js->clj (.. res -data -values))))]
           (>! ch vs)))
     ch))
@@ -29,9 +29,9 @@
 (defn get-all-char-ids [game]
   (println "get-all-char-ids")
   (let [ch (chan)]
-    (go (let [db-id      (if (= game :sw) const/sw-db-id const/coc-db-id)
+    (go (let [sheet-id   (if (= game :sw) const/sw-sheet-id const/coc-sheet-id)
               bind-table (if (= game :sw) const/sw-bind-table const/coc-bind-table)
-              res        (<? (gapis/sheets-get db-id (str bind-table "B:B")))
+              res        (<? (gapis/sheets-get sheet-id (str bind-table "B:B")))
               _          (println "aaa")
               vs         (into [] (rest (js->clj (.. res -data -values))))
               _          (println vs)]
@@ -41,10 +41,10 @@
 (defn set-binded-char-id [console-id new-id game]
   (println "set-binded-char-id")
   (let [ch (chan)]
-    (go (let [db-id      (if (= game :sw) const/sw-db-id const/coc-db-id)
+    (go (let [sheet-id   (if (= game :sw) const/sw-sheet-id const/coc-sheet-id)
               bind-table (if (= game :sw) const/sw-bind-table const/coc-bind-table)
               res        (<? (gapis/sheets-update
-                              db-id
+                              sheet-id
                               (str bind-table "B" (inc console-id) ":B" (inc console-id))
                               (clj->js [new-id])))]
           (>! ch res)))
@@ -57,6 +57,30 @@
               char-id (get-in all [(dec console-id) 0])]
           (println char-id)
           (>! ch char-id)))
+    ch))
+
+(defn get-all-var-diffs [game]
+  (println "get-all-var-diffs")
+  (let [ch (chan)]
+    (go (let [sheet-id  (if (= game :sw) const/sw-sheet-id const/coc-sheet-id)
+              var-table (if (= game :sw) const/sw-var-table const/coc-var-table)
+              res       (<? (gapis/sheets-get sheet-id (str var-table "B1:D10")))
+              _         (println (str "Got var-diffs " (name game)))
+              nums      (js->clj (.. res -data -values))
+              _         (println nums)
+              mapped    (vec (for [items (rest nums)]
+                               (into {} (for [i (range (count items))]
+                                          {(keyword ((first nums) i)) (js/parseInt (items i))}))))
+              _         (println mapped)
+              ]
+          (>! ch mapped)))
+    ch))
+
+(defn get-var-diffs [char-id game]
+  (println "get-var-diffs")
+  (let [ch (chan)]
+    (go (let [all (<? (get-all-var-diffs game))]
+          (>! ch (nth all (dec char-id)))))
     ch))
 
 (defn change-binded-char-id [console-id diff game]

@@ -47,7 +47,7 @@
                 (flatten (for [idx (range cols)]
                            [((record idx) :name) ((record idx) :proficiency)]))))])]))
 
-(defn- layouted-cs-hiccup [data]
+(defn- layouted-cs-hiccup [data diffs]
   (println "layouted-cs-hiccup")
   [:div {:style {:width 1700 :height 1000 :margin "20px"}}
    ;; Left panel
@@ -55,13 +55,17 @@
     [:div.card-body {:style {:width 800}}
      [:div {:style {:text-align "left"}} [:h4 [:span.strong "基本 "] "データ"]]
      [:div
-      [table-template false :center
-       [["名前" "性別" "年齢" "職業" "HP" "MP" "アイデア" "幸運" "知識" "DB"]
-        (concat (list (data :name) (data :gender) (data :age) (data :occupation)) (vals (data :ability)))]]]
+      (let [
+            hp-stat [:span [:span.strong (+ (data :hp-max) (diffs :hp))] (str " /" (data :hp-max))]
+            mp-stat [:span [:span.strong (+ (data :mp-max) (diffs :mp))] (str " /" (data :mp-max))]
+            san-stat [:span [:span.strong (+ (data :san-max) (diffs :san))] (str  " /" (data :san-max) " (" (data :san-limit) ")")]]
+        [table-template false :center
+         [["名前" "性別" "年齢" "職業" "HP" "MP" "正気度"]
+          (list (data :name) (data :gender) (data :age) (data :occupation) hp-stat mp-stat san-stat)]])]
      [:div
       [table-template true :center
-       [(map (comp str/upper-case name) (keys (data :params)))
-        (vals (data :params))]]]
+       [(concat '("ｱｲﾃﾞｱ" "幸運" "知識" "DB") (map (comp str/upper-case name) (keys (data :params))))
+        (concat (vals (data :ability)) (vals (data :params)))]]]
      [:div {:style {:text-align "left"}} [:h4 [:span.strong "探索 "] "技能リスト"]]
      [skills-template data 5 :exploration]
      [skills-template data 5 :negotiation]
@@ -106,6 +110,8 @@
               cs-url      (<? (remote/get-cs-url char-id :coc))
               cs-text     (<? (scrape-cs-text cs-url))
               cs-data     (parser/chara-data cs-text)
+              _ (println "pero-n")
+              diffs       (<? (remote/get-var-diffs char-id :coc))
               out-name    (str "coc-cs-" console-id ".png")
               browser     (<p! (. ppt launch (clj->js {;; :headless false
                                                        :args ["--no-sandbox"
@@ -113,7 +119,7 @@
               page        (<p! (. browser newPage))
               _           (<p! (. page setViewport (clj->js {:width 1800 :height 1100})))
               _           (<p! (. page goto (str "file://" const/root "/public/index.html")))
-              elem-txt    (rdom/render-to-string [layouted-cs-hiccup cs-data])
+              elem-txt    (rdom/render-to-string [layouted-cs-hiccup cs-data diffs])
               target-elem (<p! (. page $ "#app"))
               _           (. page evaluate (fn [elem]
                                              (let [target (. js/document getElementById "app")]

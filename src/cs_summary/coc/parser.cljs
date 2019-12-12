@@ -42,21 +42,23 @@
         second  (re-find #".*CON:([0-9]+) *APP:([0-9]+) *POW:([0-9]+) *幸 運:([0-9]+)" (targets 1))
         third   (re-find #".*SIZ:([0-9]+) *SAN:([0-9]+) *EDU:([0-9]+) *知 識:([0-9]+)" (targets 2))
         fourth  (re-find #".*H P:([0-9]+) *M P:([0-9]+) *回避:[^ ]+ *ﾀﾞﾒｰｼﾞﾎﾞｰﾅｽ:(.*)" (targets 3))]
-    {:params  {:str (js/parseInt (first 1))
-               :dex (js/parseInt (first 2))
-               :int (js/parseInt (first 3))
-               :con (js/parseInt (second 1))
-               :app (js/parseInt (second 2))
-               :pow (js/parseInt (second 3))
-               :siz (js/parseInt (third 1))
-               :san (* 5 (js/parseInt (second 3)))
-               :edu (js/parseInt (third 3))}
-     :ability {:hp-max    (js/parseInt (fourth 1))
-               :mp-max    (js/parseInt (fourth 2))
-               :idea      (js/parseInt (first 4))
-               :luck      (js/parseInt (second 4))
-               :knowledge (js/parseInt (third 4))
-               :db        (js/parseInt (fourth 3))}}))
+    {:params    {:str (js/parseInt (first 1))
+                 :dex (js/parseInt (first 2))
+                 :int (js/parseInt (first 3))
+                 :con (js/parseInt (second 1))
+                 :app (js/parseInt (second 2))
+                 :pow (js/parseInt (second 3))
+                 :siz (js/parseInt (third 1))
+                 :san (* 5 (js/parseInt (second 3)))
+                 :edu (js/parseInt (third 3))}
+     :ability   {:idea      (js/parseInt (first 4))
+                 :luck      (js/parseInt (second 4))
+                 :knowledge (js/parseInt (third 4))
+                 :db        (js/parseInt (fourth 3))}
+     :hp-max    (js/parseInt (fourth 1))
+     :mp-max    (js/parseInt (fourth 2))
+     :san-max   (* 5 (js/parseInt (second 3)))
+     :san-limit (js/parseInt (third 2))}))
 
 (defn- parse-equipment [text]
   (let [lines      (str/split-lines text)
