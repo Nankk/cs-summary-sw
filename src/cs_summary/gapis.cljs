@@ -41,7 +41,7 @@
   ([sheet-id range values]
    (let [ch (chan)
          cbf (fn [err res] (when err (throw err)) (go (>! ch res)))]
-     (sheets-update range values cbf)
+     (sheets-update sheet-id range values cbf)
      ch))
   ([sheet-id range values callback-fn]
    (let [params (clj->js {:spreadsheetId sheet-id

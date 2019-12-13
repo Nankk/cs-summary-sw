@@ -7,7 +7,6 @@
    [cs-summary.gapis :as gapis]
    [cs-summary.const :as const]))
 
-
 (defn get-all-cs-urls [game]
   (println "get-all-cs-urls")
   (let [ch (chan)]
@@ -83,6 +82,32 @@
           (>! ch (nth all (dec char-id)))))
     ch))
 
+(defn get-all-op-values [game]
+  (println "get-all-op-values")
+  (let [ch (chan)]
+    (go (let [sheet-id    (if (= game :sw) const/sw-sheet-id const/coc-sheet-id)
+              bind-table  (if (= game :sw) const/sw-bind-table const/coc-bind-table)
+              sheet-range (if (= game :sw) "" "D1:H10")
+              res         (<? (gapis/sheets-get sheet-id (str bind-table sheet-range)))
+              _           (println (str "Got op-values " (name game)))
+              vs          (js->clj (.. res -data -values))
+              _           (println vs)
+              mapped      (vec (for [items (rest vs)]
+                                 (into {} (for [i (range (count items))]
+                                            {(keyword ((first vs) i)) (js/parseInt (items i))}))))
+              _           (println mapped)
+              ]
+          (>! ch mapped)))
+    ch))
+
+(defn get-op-values [char-id game]
+  (println "get-op-values")
+  (let [ch (chan)]
+    (go (let [all (<? (get-all-op-values game))]
+          (println "aaa")
+          (>! ch (nth all (dec char-id)))))
+    ch))
+
 (defn change-binded-char-id [console-id diff game]
   (println "change-binded-char-id")
   (let [ch (chan)]
@@ -90,3 +115,29 @@
           (<? (set-binded-char-id console-id (+ char-id diff) game))))
     ch))
 
+(defn- ->coc-param [num]
+  (nth const/coc-params (mod (count const/coc-params) num)))
+
+(defn set-all-op-values [new-values game]
+  (println "set-all-op-values")
+  (println "Debug-man!! (^v^)")
+  (let [ch (chan)]
+    (go (let [sheet-id    (if (= game :sw) const/sw-sheet-id const/coc-sheet-id)
+              bind-table  (if (= game :sw) const/sw-bind-table const/coc-bind-table)
+              sheet-range (if (= game :sw) "" "D2:H10")
+              res         (<? (gapis/sheets-update sheet-id (str bind-table sheet-range) new-values))
+              _ (println res)
+              ]
+          (>! ch res)))
+    ch))
+
+(defn- inc-op-value [console-id target cur-val game]
+  (let [new-val (inc cur-val)
+        params-count (if (= game :sw) (count const/sw-params) (count const/coc-params))]
+    (case target
+      :op_param (mod new-val params-count)
+      :sign (mod new-val 2)
+      (mod new-val 10))))
+
+(defn reflect-op [console-id res game]
+  )

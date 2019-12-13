@@ -14,8 +14,38 @@
    [cs-summary.macros :refer [throw-err] :refer-macros [<?]]
    [cs-summary.sw.png-maker :as sw-png]
    [cs-summary.coc.png-maker :as coc-png]
-   [cs-summary.db-remote :as remote]
-   ))
+   [cs-summary.db-remote :as remote]))
+
+;; Common ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn- png-url [target num game]
+  (let [img-root "./public/img"]
+    (case target
+      :sign     (let [plus-or-minus [(str img-root "/common/plus.png")
+                                     (str img-root "/common/minus.png")]]
+                  (nth plus-or-minus num))
+      :op_param (let [params (if (= game :sw) const/sw-params const/coc-params)]
+                  (str img-root "/" (name game) "/" (name (nth params num)) ".png"))
+      (str img-root "/common/" num ".png"))))
+
+(defn change-op-value [query v res game]
+  (println "change-op-value")
+  (go (let [console-id        (query :console_id)
+            sheet-id          (if (= game :sw) const/sw-sheet-id const/coc-sheet-id)
+            target            (keyword (query :target))
+            all-op-values     (<? (remote/get-all-op-values game))
+            new-vs            (update-in all-op-values
+                                         [(dec console-id) target]
+                                         #(remote/inc-op-value console-id target % game))
+            new-vs-vectorized (vec (for [v new-vs] (vec (vals v))))
+            _                 (<? (remote/set-all-op-values (clj->js new-vs-vectorized) game))
+            new-v             (get-in new-vs [(dec console-id) target])
+            png               (. fs createReadStream (png-url target new-v game))
+            ps                (. stream PassThrough)]
+        (. stream pipeline png ps
+           (fn [err] (when err (. js/console log err) (. res sendStatus 400))))
+        (. ps pipe res))))
 
 (defn- return-cs-summary [query res game]
   (println "return-cs-summary")
@@ -35,35 +65,34 @@
 (defn- handle-sw [req res]
   (println "handle-sw")
   (go (try
-      (let [query      (js->clj (. req -query) :keywordize-keys true)
-            console-id (:console_id query)
-            type       (:type query)]
-        (if console-id
-          (do
-            (case type
-              "next" (<? (remote/change-binded-char-id console-id 1 :sw))
-              "prev" (<? (remote/change-binded-char-id console-id -1 :sw))
-              (. js/console log "No type specified."))
-            (return-cs-summary query res :sw))
-          (. (. res status 400) end))
-        )
-      (catch js/Object e
-        (. (. res status 500) end)))))
-
-;; CoC character sheet ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- handle-coc [req res]
-  (println "handle-sw")
-  (go (try
         (let [query      (js->clj (. req -query) :keywordize-keys true)
               console-id (:console_id query)
               type       (:type query)]
           (if console-id
             (do
               (case type
-                "next" (<? (remote/change-binded-char-id console-id 1 :coc))
-                "prev" (<? (remote/change-binded-char-id console-id -1 :coc))
+                "next" (<? (remote/change-binded-char-id console-id 1 :sw))
+                "prev" (<? (remote/change-binded-char-id console-id -1 :sw))
                 (. js/console log "No type specified."))
+              (return-cs-summary query res :sw))
+            (. (. res status 400) end)))
+        (catch js/Object e
+          (. (. res status 500) end)))))
+
+;; CoC character sheet ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; ex) console_id=1&type=inc&target=op_param
+(defn- handle-coc [req res]
+  (println "handle-sw")
+  (go (try
+        (let [query      (js->clj (. req -query) :keywordize-keys true)
+              console-id (query :console_id)
+              type       (query :type)]
+          (if console-id
+            (case type
+              "inc"     (change-op-value query 1 res :coc)
+              "dec"     (change-op-value query -1 res :coc)
+              "reflect" (remote/reflect-op console-id res :coc)
               (return-cs-summary query res :coc))
             (. (. res status 400) end)))
         (catch js/Object e

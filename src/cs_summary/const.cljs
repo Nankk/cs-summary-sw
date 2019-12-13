@@ -6,11 +6,13 @@
 (def sw-data-table "char-data-table!")
 (def sw-var-table "char-var-table!") ; Not implemented yet
 (def sw-sheet-id "1oMDM0k9TfPREXhXHIrTUPCpxmZpwmhq79yiCkt1JdMM")
+(def sw-params [:hp :mp :gamel])
 
 (def coc-bind-table "console-bind-table!")
 (def coc-data-table "char-data-table!")
 (def coc-var-table "char-var-table!")
 (def coc-sheet-id "1KSIxjRdT9kr3wUER9hnNjsYKP4sDeJ9gDi5goMNzv4U")
+(def coc-params [:hp :mp :san])
 
 ;; Rating table from 0 to 50; index corresponds to the weapon power
 (def weapon-rating-table [[0 0 0 1 2 2 3 3 4 4]
