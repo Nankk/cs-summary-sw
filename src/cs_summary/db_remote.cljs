@@ -58,6 +58,18 @@
           (>! ch char-id)))
     ch))
 
+(defn set-all-var-diffs [new-values game]
+  (let [ch (chan)]
+    (go (let [sheet-id    (if (= game :sw) const/sw-sheet-id const/coc-sheet-id)
+              var-table   (if (= game :sw) const/sw-var-table const/coc-var-table)
+              sheet-range (if (= game :sw) "" "B2:D10")
+              res         (<? (gapis/sheets-update sheet-id (str var-table sheet-range) new-values))
+              _           (println res)
+              ]
+          (>! ch res)))
+    ch)
+)
+
 (defn get-all-var-diffs [game]
   (println "get-all-var-diffs")
   (let [ch (chan)]
@@ -100,12 +112,11 @@
           (>! ch mapped)))
     ch))
 
-(defn get-op-values [char-id game]
+(defn get-op-values [console-id game]
   (println "get-op-values")
   (let [ch (chan)]
     (go (let [all (<? (get-all-op-values game))]
-          (println "aaa")
-          (>! ch (nth all (dec char-id)))))
+          (>! ch (nth all (dec console-id)))))
     ch))
 
 (defn change-binded-char-id [console-id diff game]
@@ -139,5 +150,3 @@
       :sign (mod new-val 2)
       (mod new-val 10))))
 
-(defn reflect-op [console-id res game]
-  )

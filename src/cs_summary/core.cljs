@@ -18,7 +18,6 @@
 
 ;; Common ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn- png-url [target num game]
   (let [img-root "./public/img"]
     (case target
@@ -60,6 +59,24 @@
        (catch js/Object e
          (. (. res status 500) end))))
 
+(defn reflect-op [query res game]
+  (println "reflect-op")
+  (go (let [console-id           (query :console_id)
+            op-values            (vec (vals (<? (remote/get-op-values console-id game))))
+            params               (if (= game :sw) const/sw-params const/coc-params)
+            target               (params (js/parseInt (op-values 0)))
+            sign                 (nth ["+" "-"] (op-values 1))
+            diff                 (js/parseInt (str sign (str/join "" (subvec op-values 2))))
+            _                    (println (str "diff: " diff))
+            all-var-diffs        (<? (remote/get-all-var-diffs game))
+            _                    (println (str "all-var-diffs: " all-var-diffs))
+            new-diffs            (update-in all-var-diffs
+                                            [(dec console-id) target]
+                                            #(+ % diff))
+            new-diffs-vectorized (vec (for [v new-diffs] (vec (vals v))))
+            _                    (println (<? (remote/set-all-var-diffs new-diffs-vectorized game)))]
+        (return-cs-summary query res game))))
+
 ;; SW character sheet ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- handle-sw [req res]
@@ -92,7 +109,7 @@
             (case type
               "inc"     (change-op-value query 1 res :coc)
               "dec"     (change-op-value query -1 res :coc)
-              "reflect" (remote/reflect-op console-id res :coc)
+              "reflect" (reflect-op query res :coc)
               (return-cs-summary query res :coc))
             (. (. res status 400) end)))
         (catch js/Object e
