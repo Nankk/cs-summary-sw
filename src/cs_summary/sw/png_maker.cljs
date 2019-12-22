@@ -12,8 +12,7 @@
    [reagent.dom.server :as rdom]
    [cs-summary.util :as util]
    [cs-summary.const :as const]
-   [cs-summary.macros :refer [throw-err] :refer-macros [<?]]
-   ))
+   [cs-summary.macros :refer [throw-err] :refer-macros [<?]]))
 
 ;; SW character sheet ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -29,8 +28,8 @@
      [:tbody
       (for [row data-rows]
         ^{:key (util/next-key)} [:tr
-                            (for [v row]
-                              ^{:key (util/next-key)} [:td v])])])])
+                                 (for [v row]
+                                   ^{:key (util/next-key)} [:td v])])])])
 
 (defn- layouted-cs-hiccup [data]
   (println "layouted-cs-hiccup")
@@ -68,7 +67,7 @@
         [table-template false
          (vec (cons ["特技" "内容"]
                     (vec (for [skill (data :skills)] ^{:key (util/next-key)}
-                           [(skill :name) (skill :description)]))))]]
+                              [(skill :name) (skill :description)]))))]]
        [:div.inline-block {:style {:width 250}}
         [table-template false
          (vec (cons ["魔法技能" "レベル" "魔力"]
@@ -115,7 +114,7 @@
               button     (<p! (. page $ selector))
               _          (<p! (. button evaluate (fn [b] (. b click))))
               p-content  (<p! (. page evaluate (fn [] (.. js/document -body -innerHTML))))
-              _          (<? (timeout 2000)) ; Ugly. Quite ugly.
+              _          (<? (timeout 3000))
               cs-page    (clj->js ((js->clj (<p! (. browser pages))) 2))
               cs-content (<p! (. cs-page evaluate (fn [] (. (. js/document querySelector "pre") -innerHTML))))
               _          (println "Yomikomi owata ＼(^o^)／")]
@@ -142,22 +141,25 @@
      :f      (if (zero? ranger) 0 (+ int ranger))
      :g      (if (zero? sage) 0 (+ int sage))}))
 
-(defn create-cs-png [console-id]
+(defn create-cs-data [url]
+  (let [ch (chan)]
+    (go (let [cs-text     (<? (scrape-cs-text url))
+              cs-data     (parser/chara-data cs-text)
+              cs-data+    (assoc cs-data :package-values (package-values cs-data))]
+          (>! ch cs-data+)))
+    ch))
+
+(defn create-cs-png [cs-data char-id]
   (println "create-cs-png")
   (let [ch (chan)]
-    (go (let [char-id     (<? (remote/get-binded-char-id console-id :sw))
-              cs-url      (<? (remote/get-cs-url char-id :sw))
-              cs-text     (<? (scrape-cs-text cs-url))
-              cs-data     (parser/chara-data cs-text)
-              cs-data+    (assoc cs-data :package-values (package-values cs-data)) ; append package values
-              out-name    (str "sw-cs-" console-id ".png")
+    (go (let [out-name    (str "sw-cs-" char-id ".png")
               browser     (<p! (. ppt launch (clj->js {;; :headless false
                                                        :args ["--no-sandbox"
                                                               "--disable-setuid-sandbox"]})))
               page        (<p! (. browser newPage))
               _           (<p! (. page setViewport (clj->js {:width 1800 :height 1100})))
               _           (<p! (. page goto (str "file://" const/root "/public/index.html")))
-              elem-txt    (rdom/render-to-string [layouted-cs-hiccup cs-data+])
+              elem-txt    (rdom/render-to-string [layouted-cs-hiccup cs-data])
               target-elem (<p! (. page $ "#app"))
               _           (. page evaluate (fn [elem]
                                              (let [target (. js/document getElementById "app")]

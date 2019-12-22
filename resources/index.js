@@ -10,7 +10,7 @@ try {require('source-map-support').install();} catch (e) {console.warn('no "sour
 
 global.CLOSURE_NO_DEPS = true;
 
-global.CLOSURE_DEFINES = {"shadow.cljs.devtools.client.env.repl_pprint":false,"shadow.cljs.devtools.client.env.devtools_url":"","shadow.cljs.devtools.client.env.autoload":true,"shadow.cljs.devtools.client.env.proc_id":"b99f2f25-de47-475f-a188-b5cd68e4fb9c","goog.ENABLE_DEBUG_LOADER":false,"shadow.cljs.devtools.client.env.server_port":9630,"shadow.cljs.devtools.client.env.use_document_host":true,"shadow.cljs.devtools.client.env.module_format":"goog","goog.LOCALE":"en","re_frame.trace.trace_enabled_QMARK_":true,"shadow.cljs.devtools.client.env.build_id":"main","shadow.cljs.devtools.client.env.ignore_warnings":false,"goog.DEBUG":true,"cljs.core._STAR_target_STAR_":"nodejs","shadow.cljs.devtools.client.env.ssl":false,"shadow.cljs.devtools.client.env.enabled":true,"shadow.cljs.devtools.client.env.server_host":"localhost","goog.TRANSPILE":"never"};
+global.CLOSURE_DEFINES = {"shadow.cljs.devtools.client.env.repl_pprint":false,"shadow.cljs.devtools.client.env.devtools_url":"","shadow.cljs.devtools.client.env.autoload":true,"shadow.cljs.devtools.client.env.proc_id":"c3593917-8774-47a6-a587-1fb95d728569","goog.ENABLE_DEBUG_LOADER":false,"shadow.cljs.devtools.client.env.server_port":9630,"shadow.cljs.devtools.client.env.use_document_host":true,"shadow.cljs.devtools.client.env.module_format":"goog","goog.LOCALE":"en","re_frame.trace.trace_enabled_QMARK_":true,"shadow.cljs.devtools.client.env.build_id":"main","shadow.cljs.devtools.client.env.ignore_warnings":false,"goog.DEBUG":true,"cljs.core._STAR_target_STAR_":"nodejs","shadow.cljs.devtools.client.env.ssl":false,"shadow.cljs.devtools.client.env.enabled":true,"shadow.cljs.devtools.client.env.server_host":"localhost","goog.TRANSPILE":"never"};
 
 var goog = global.goog = {};
 
@@ -2227,6 +2227,7 @@ SHADOW_IMPORT("cs_summary.db_remote.js");
 SHADOW_IMPORT("cs_summary.util.js");
 SHADOW_IMPORT("cs_summary.sw.png_maker.js");
 SHADOW_IMPORT("cs_summary.coc.parser.js");
+SHADOW_IMPORT("cs_summary.db_local.js");
 SHADOW_IMPORT("cs_summary.coc.png_maker.js");
 SHADOW_IMPORT("cs_summary.core.js");
 SHADOW_IMPORT("shadow.module.main.append.js");

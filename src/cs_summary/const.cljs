@@ -14,6 +14,16 @@
 (def coc-sheet-id "1KSIxjRdT9kr3wUER9hnNjsYKP4sDeJ9gDi5goMNzv4U")
 (def coc-params [:hp :mp :san])
 
+(defn params [game]
+  (case game
+    :sw  sw-params
+    :coc coc-params))
+
+(defn sheet-id [game]
+  (case game
+    :sw  sw-sheet-id
+    :coc coc-sheet-id))
+
 ;; Rating table from 0 to 50; index corresponds to the weapon power
 (def weapon-rating-table [[0 0 0 1 2 2 3 3 4 4]
                           [0 0 0 1 2 3 3 3 4 4]

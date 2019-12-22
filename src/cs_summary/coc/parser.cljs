@@ -31,9 +31,9 @@
 
 (defn- parse-char-data [text]
   {:name (str/trim ((re-find #"キャラクター名：(.+)" text) 1))
-   :age  (str/trim ((re-find #"年齢：([0-9]+)" text) 1))
-   :gender (str/trim ((re-find #"性別：(.+)" text) 1))
-   :occupation (str/trim ((re-find #"職業：(.+)" text) 1))})
+   :age  (str/trim ((or (re-find #"年齢：([0-9]+)" text) ["" ""]) 1))
+   :gender (str/trim ((or (re-find #"性別：(.+)" text) ["" ""]) 1))
+   :occupation (str/trim ((or (re-find #"職業：(.+)" text) ["" ""]) 1))})
 
 (defn- parse-params [text]
   (let [lines   (str/split-lines text)
@@ -54,7 +54,7 @@
      :ability   {:idea      (js/parseInt (first 4))
                  :luck      (js/parseInt (second 4))
                  :knowledge (js/parseInt (third 4))
-                 :db        (js/parseInt (fourth 3))}
+                 :db        (fourth 3)}
      :hp-max    (js/parseInt (fourth 1))
      :mp-max    (js/parseInt (fourth 2))
      :san-max   (* 5 (js/parseInt (second 3)))

@@ -8,6 +8,7 @@
    [cljs.core.async :as async :refer [>! <! go chan timeout go-loop]]
    [async-interop.interop :refer-macros [<p!]]
    [cs-summary.coc.parser :as parser]
+   [cs-summary.db-local :as local]
    [cs-summary.db-remote :as remote]
    [reagent.dom.server :as rdom]
    [cs-summary.util :as util]
@@ -82,37 +83,51 @@
        (cons ["装備品" "成功率" "ダメージ" "射程" "攻撃回数" "装弾数" "耐久力"]
              (for [eqp (data :equipments)] (vals eqp)))]]]]])
 
-(defn- scrape-cs-text [url]
+(defn- scrape-cs-text [url latency-ms]
   (println "scrape-cs-text")
   (let [ch (chan)]
-    (go (let [selector   "#MAKING > aside.leftsidebar.fixed > section:nth-child(3) > div > button:nth-child(1)"
-              browser    (<p! (. ppt launch (clj->js {;; :headless false
+    (go (let [_          (<! (timeout latency-ms))
+              selector   "#MAKING > aside.leftsidebar.fixed > section:nth-child(3) > div > button:nth-child(1)"
+              browser    (<p! (. ppt launch (clj->js {:headless false
                                                       :args     ["--no-sandbox"
                                                                  "--disable-setuid-sandbox"]})))
+              _          (println "Browser launched")
               page       (<p! (. browser newPage))
+              _          (println (str "Move page to " url))
               _          (<p! (. page goto url))
+              _          (println "Moved")
               button     (<p! (. page $ selector))
+              _          (println "Clicking button...")
               _          (<p! (. button evaluate (fn [b] (. b click))))
+              _          (println "Clicked")
               p-content  (<p! (. page evaluate (fn [] (.. js/document -body -innerHTML))))
-              _          (<? (timeout 2000)) ; Ugly. Quite ugly.
+              _          (println "Waiting for the new tab getting ready...")
+              _          (<? (timeout 3000)) ; Ugly. Quite ugly.
               cs-page    (clj->js ((js->clj (<p! (. browser pages))) 2))
+              _          (println "Moved to newly opened tab")
               cs-content (<p! (. cs-page evaluate (fn [] (. (. js/document querySelector "pre") -innerHTML))))
               _          (println "Yomikomi owata ＼(^o^)／")]
+          (println "Closing browser...")
           (. browser close)
-          (println (str "Content is:\n" cs-content))
+          (println "Browser closed")
           (>! ch cs-content)))
     ch))
 
-(defn create-cs-png [console-id]
+(defn create-cs-data [url latency-ms]
+  (println "create-cs-data")
+  (let [ch (chan)]
+    (go (let [cs-text     (<? (scrape-cs-text url latency-ms))
+              cs-data     (parser/chara-data cs-text)]
+          (>! ch cs-data)))
+    ch))
+
+(defn create-cs-png [char-id]
   (println "create-cs-png")
   (let [ch (chan)]
-    (go (let [char-id     (<? (remote/get-binded-char-id console-id :coc))
-              cs-url      (<? (remote/get-cs-url char-id :coc))
-              cs-text     (<? (scrape-cs-text cs-url))
-              cs-data     (parser/chara-data cs-text)
-              _ (println "pero-n")
-              diffs       (<? (remote/get-var-diffs char-id :coc))
-              out-name    (str "coc-cs-" console-id ".png")
+    (go (let [cs-data     ((@local/db :cs-data-list) char-id)
+              diffs       ((@local/db :char-vars) char-id)
+              out-name    (str "coc-cs-" char-id ".png")
+              _           (println "Launching browser...")
               browser     (<p! (. ppt launch (clj->js {;; :headless false
                                                        :args ["--no-sandbox"
                                                               "--disable-setuid-sandbox"]})))
