@@ -17,7 +17,7 @@
    [cs-summary.db-local :as local]
    [cs-summary.db-remote :as remote]))
 
-;; Detail ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Private ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- scrape-cs-text [url]
   (println "scrape-cs-text")
@@ -48,8 +48,8 @@
                       idx           (local/<-sign v)]
                   (nth plus-or-minus idx))
       :param (let [params (const/params game)
-                      idx    (local/<-param v game)]
-                  (str img-root "/" (name game) "/" (name (nth params idx)) ".png"))
+                   idx    (local/<-param v game)]
+               (str img-root "/" (name game) "/" (name (nth params idx)) ".png"))
       (str img-root "/common/" v ".png"))))
 
 (defn insanitize
@@ -57,21 +57,39 @@
   [s]
   (str/replace s #"_" "-"))
 
+(defn- create-cs-png [char-id game]
+  (println "create-cs-png")
+  (let [ch (chan)]
+    (go (let [data        ((@local/db :cs-data-list) char-id)
+              png-creator (if (= game :sw) sw-png/create-cs-png coc-png/create-cs-png)
+              png-name    (<? (png-creator char-id))]
+          (>! ch png-name)))
+    ch))
+
 ;; Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- return-cs-png [res char-id game]
-  (println "return-cs-png")
+(defn- return-png [res url]
+  (println "return-png")
   (go (try
-        (let [data        ((@local/db :cs-data-list) char-id)
-              png-creator (if (= game :sw) sw-png/create-cs-png coc-png/create-cs-png)
-              png-name    (<? (png-creator char-id))
-              png         (. fs createReadStream (str "./public/img/" png-name))
-              ps          (. stream PassThrough)]
+        (let [png (. fs createReadStream url)
+              ps  (. stream PassThrough)]
           (. stream pipeline png ps
              (fn [err] (when err (. js/console log err) (. res sendStatus 400))))
           (. ps pipe res))
         (catch js/Object e
-          (. (. res status 500) end)))))
+          (do (. js/console log e)
+              (. (. res status 500) end))))))
+
+(defn- handle-roll [req res]
+  (println "handle-roll")
+  (go (try (let [query   (js->clj (. req -query) :keywordize-keys true)
+                 dice    (query :dice)
+                 _       (println (str "queries {:dice " dice "}"))
+                 pip     (inc (rand-int (js/parseInt (str/join (rest dice)))))
+                 png-url (str "./public/img/dice/" dice "/" pip ".png")]
+             (return-png res png-url))
+           (catch js/Object e
+             (. (. res status 500) end)))))
 
 (defn- handle-reflect-op-var [req res]
   (println "handle-reflect-op-var")
@@ -84,7 +102,7 @@
                  (local/reflect-op-var char-id)
                  (if reflect-only?
                    (. (. res status 200) end)
-                   (return-cs-png res char-id game)))
+                   (return-png res (str "./public/img/" (<? (create-cs-png char-id game))))))
                (. (. res status 400) end)))
            (catch js/Object e
              (. (. res status 500) end)))))
@@ -122,7 +140,7 @@
               game      (keyword (query :game))]
           (if (and char-id game)
             (if (not-empty data-list)
-              (return-cs-png res char-id game)
+              (return-png res (str "./public/img/" (<? (create-cs-png char-id game))))
               ;; 412 Precondition Required
               (. (. res status 412) end))
             (. (. res status 400) end))) ; 400 Bad Request
@@ -187,6 +205,8 @@
     (. app get "/change-op-var" handle-change-op-var)
 
     (. app get "/reflect-op-var" handle-reflect-op-var)
+
+    (. app get "/roll" handle-roll)
 
     (when (some? @server)
       (. @server close)
