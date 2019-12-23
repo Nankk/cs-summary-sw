@@ -88,7 +88,7 @@
   (let [ch (chan)]
     (go (let [_          (<! (timeout latency-ms))
               selector   "#MAKING > aside.leftsidebar.fixed > section:nth-child(3) > div > button:nth-child(1)"
-              browser    (<p! (. ppt launch (clj->js {:headless false
+              browser    (<p! (. ppt launch (clj->js {;; :headless false
                                                       :args     ["--no-sandbox"
                                                                  "--disable-setuid-sandbox"]})))
               _          (println "Browser launched")

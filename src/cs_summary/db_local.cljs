@@ -2,13 +2,14 @@
   (:require [cs-summary.util :as util]
             [cs-summary.const :as const]))
 
-(def default-db {:cs-data-list   []
-                 :op-vars   (vec (take 10 (repeat {:param   :mp
-                                                   :sign    :-
-                                                   :digit-3 9
-                                                   :digit-2 9
-                                                   :digit-1 9})))
-                 :char-vars (vec (take 10 (repeat {:hp 0 :mp 0 :san 0})))})
+(def default-db {:ready?       false
+                 :cs-data-list []
+                 :op-vars      (vec (take 10 (repeat {:param   :hp
+                                                      :sign    :-
+                                                      :digit-3 0
+                                                      :digit-2 0
+                                                      :digit-1 0})))
+                 :char-vars    (vec (take 10 (repeat {:hp 0 :mp 0 :san 0})))})
 
 (def db (atom default-db))
 
@@ -73,3 +74,5 @@
     (swap! db update-in [:char-vars char-id param] #(+ % diff))
     (println (str "db [:char-vars " char-id " " param "] updated to " (get-in @db [:char-vars char-id param])))))
 
+(defn activate []
+  (swap! db assoc :ready? true))

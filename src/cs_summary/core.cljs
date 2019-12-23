@@ -68,6 +68,13 @@
 
 ;; Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- handle-activate [req res]
+  (println "handle-activate")
+  (go (try (do (local/activate)
+               (. res sendStatus 200))
+           (catch js/Object e
+             (. (. res status 500) end)))))
+
 (defn- return-png [res url]
   (println "return-png")
   (go (try
@@ -116,11 +123,13 @@
                  game    (keyword (query :game))
                  _       (println (str "queries {:char_id " char-id " :type " type " :var " var " :game " game "}"))
                  cur-v   (get-in @local/db [:op-vars char-id var])
-                 changed (case type
-                           :inc (local/changed-op-var var cur-v game 1)
-                           :dec (local/changed-op-var var cur-v game -1)
-                           (do (. (. res status 412) end)
-                               (throw (js/Error. "Unknown change type"))))
+                 changed (if (@local/db :ready?)
+                           (case type
+                             :inc (local/changed-op-var var cur-v game 1)
+                             :dec (local/changed-op-var var cur-v game -1)
+                             (do (. (. res status 412) end)
+                                 (throw (js/Error. "Unknown change type"))))
+                           cur-v)
                  _       (local/set-op-var char-id var changed)
                  url     (png-url var changed game)
                  png     (. fs createReadStream url)
@@ -207,6 +216,8 @@
     (. app get "/reflect-op-var" handle-reflect-op-var)
 
     (. app get "/roll" handle-roll)
+
+    (. app get "/activate" handle-activate)
 
     (when (some? @server)
       (. @server close)
