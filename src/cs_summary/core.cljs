@@ -225,9 +225,9 @@
 
     (println (str "### You have re-loaded " (reload-counter) " times. ###"))
 
-    ;; Listen process.env.PORT or fixed port 3000
+    ;; Listen process.env.PORT or fixed port 55555
     (let [env-port (.. js/process -env -PORT)
-          port (if env-port env-port 3000)]
+          port (if env-port env-port 55555)]
       (reset! server (. app listen port,
                         #(. js/console log
                             (str "Listening on port " port)))))))
