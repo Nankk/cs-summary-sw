@@ -15,9 +15,28 @@
    [cs-summary.sw.png-maker :as sw-png]
    [cs-summary.coc.png-maker :as coc-png]
    [cs-summary.db-local :as local]
-   [cs-summary.db-remote :as remote]))
+   [cs-summary.db-remote :as remote]
+   [cljs.pprint :refer [pprint]]))
 
 ;; Private ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- pretty-string [data]
+  (with-out-str (pprint data)))
+
+(defn- return-success [res msg]
+  (. res send (str "<pre>" msg "</pre>")))
+
+(defn- return-png [res url]
+  (println "return-png")
+  (go (try
+        (let [png (. fs createReadStream url)
+              ps  (. stream PassThrough)]
+          (. stream pipeline png ps
+             (fn [err] (when err (. js/console log err) (. res sendStatus 400))))
+          (. ps pipe res))
+        (catch js/Object e
+          (do (. js/console log e)
+              (. res sendStatus 500))))))
 
 (defn- scrape-cs-text [url]
   (println "scrape-cs-text")
@@ -68,80 +87,33 @@
 
 ;; Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- handle-init [req res]
+  (println "handle-init")
+  (go (try
+        (do
+          (local/set-default-db)
+          (return-success res (str "db updated.\n" (pretty-string @local/db))))
+        (catch js/Object e
+          (. res sendStatus 500)))))
+
 (defn- handle-activate [req res]
   (println "handle-activate")
   (go (try (do (local/activate)
                (. res sendStatus 200))
            (catch js/Object e
-             (. (. res status 500) end)))))
+             (. res sendStatus 500)))))
 
-(defn- return-png [res url]
-  (println "return-png")
-  (go (try
-        (let [png (. fs createReadStream url)
-              ps  (. stream PassThrough)]
-          (. stream pipeline png ps
-             (fn [err] (when err (. js/console log err) (. res sendStatus 400))))
-          (. ps pipe res))
-        (catch js/Object e
-          (do (. js/console log e)
-              (. (. res status 500) end))))))
-
-(defn- handle-roll [req res]
-  (println "handle-roll")
-  (go (try (let [query   (js->clj (. req -query) :keywordize-keys true)
-                 dice    (query :dice)
-                 _       (println (str "queries {:dice " dice "}"))
-                 pip     (inc (rand-int (js/parseInt (str/join (rest dice)))))
-                 png-url (str "./public/img/dice/" dice "/" pip ".png")]
-             (return-png res png-url))
+(defn- handle-deactivate [req res]
+  (println "handle-deactivate")
+  (go (try (do (local/deactivate)
+               (. res sendStatus 200))
            (catch js/Object e
-             (. (. res status 500) end)))))
+             (. res sendStatus 500)))))
 
-(defn- handle-reflect-op-var [req res]
-  (println "handle-reflect-op-var")
-  (go (try (let [query         (js->clj (. req -query) :keywordize-keys true)
-                 char-id       (js/parseInt (query :char_id))
-                 game          (keyword (query :game))
-                 reflect-only? (query :reflect_only)]
-             (if char-id
-               (let [op-vars (@local/db :op-vars)]
-                 (local/reflect-op-var char-id)
-                 (if reflect-only?
-                   (. (. res status 200) end)
-                   (return-png res (str "./public/img/" (<? (create-cs-png char-id game))))))
-               (. (. res status 400) end)))
-           (catch js/Object e
-             (. (. res status 500) end)))))
+;; Character sheet ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- handle-change-op-var [req res]
-  (println "handle-change-op-var")
-  (go (try (let [query   (js->clj (. req -query) :keywordize-keys true)
-                 char-id (js/parseInt (query :char_id))
-                 type    (keyword (query :type))
-                 var     (keyword (insanitize (query :var)))
-                 game    (keyword (query :game))
-                 _       (println (str "queries {:char_id " char-id " :type " type " :var " var " :game " game "}"))
-                 cur-v   (get-in @local/db [:op-vars char-id var])
-                 changed (if (@local/db :ready?)
-                           (case type
-                             :inc (local/changed-op-var var cur-v game 1)
-                             :dec (local/changed-op-var var cur-v game -1)
-                             (do (. (. res status 412) end)
-                                 (throw (js/Error. "Unknown change type"))))
-                           cur-v)
-                 _       (local/set-op-var char-id var changed)
-                 url     (png-url var changed game)
-                 png     (. fs createReadStream url)
-                 ps      (. stream PassThrough)]
-             (. stream pipeline png ps
-                (fn [err] (when err (. js/console log err) (. res sendStatus 400))))
-             (. ps pipe res))
-           (catch js/Object e
-             (. (. res status 500) end)))))
-
-(defn- handle-charcter-sheet [req res]
-  (println "handle-charcter-sheet")
+(defn- handle-get-cs [req res]
+  (println "handle-get-cs")
   (go (try
         (let [data-list (get @local/db :cs-data-list)
               query     (js->clj (. req -query) :keywordize-keys true)
@@ -149,15 +121,17 @@
               game      (keyword (query :game))]
           (if (and char-id game)
             (if (not-empty data-list)
-              (return-png res (str "./public/img/" (<? (create-cs-png char-id game))))
+              (if (<= 0 char-id (dec (count data-list)))
+                (return-png res (str "./public/img/" (<? (create-cs-png char-id game))))
+                (return-png res "./public/img/common/vacant.png"))
               ;; 412 Precondition Required
-              (. (. res status 412) end))
-            (. (. res status 400) end))) ; 400 Bad Request
+              (. res sendStatus 412))
+            (. res sendStatus 400))) ; 400 Bad Request
         (catch js/Object e
-          (. (. res status 500) end)))))
+          (. res sendStatus 500)))))
 
-(defn- handle-init [req res]
-  (println "handle-init")
+(defn- handle-load-cs [req res]
+  (println "handle-load-cs")
   (go (try
         (let [query (js->clj (. req -query) :keywordize-keys true)
               game  (keyword (query :game))]
@@ -171,20 +145,99 @@
               (let [data-list (@local/db :cs-data-list)]
                 (println data-list)
                 (println (str "Got " (count data-list) " data from the server"))
-                (. (. res status 200) end)))
-            (. (. res status 400) end)))
+                (. res sendStatus 200)))
+            (. res sendStatus 400)))
         (catch js/Object e
           (println e)
-          (. (. res status 500) end)))))
+          (. res sendStatus 500)))))
 
-(defn- handle-reset [req res]
-  (println "handle-reset")
-  (go (try
-        (do
-          (local/set-default-db)
-          (. (. res status 200) end))
-        (catch js/Object e
-          (. (. res status 500) end)))))
+;; Operation variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- handle-change-op-var [req res]
+  (println "handle-change-op-var")
+  (go (try (let [query   (js->clj (. req -query) :keywordize-keys true)
+                 _       (println "Received queries are " query)
+                 char-id (js/parseInt (query :char_id))
+                 type    (keyword (query :type))
+                 var     (keyword (insanitize (query :var)))
+                 game    (keyword (query :game))
+                 cur-v   (get-in @local/db [:op-vars char-id var])
+                 changed (if (@local/db :ready?)
+                           (case type
+                             :inc (local/changed-op-var var cur-v game 1)
+                             :dec (local/changed-op-var var cur-v game -1)
+                             (do (. res sendStatus 412)
+                                 (throw (js/Error. "Unknown change type"))))
+                           cur-v)
+                 _       (println "to " changed)
+                 _       (local/set-op-var char-id var changed)
+                 url     (png-url var changed game)
+                 png     (. fs createReadStream url)
+                 ps      (. stream PassThrough)]
+             (. stream pipeline png ps
+                (fn [err] (when err (. js/console log err) (. res sendStatus 400))))
+             (. ps pipe res))
+           (catch js/Object e
+             (. res sendStatus 500)))))
+
+(defn- handle-reflect-op-var [req res]
+  (println "handle-reflect-op-var")
+  (go (try (let [query         (js->clj (. req -query) :keywordize-keys true)
+                 char-id       (js/parseInt (query :char_id))
+                 game          (keyword (query :game))
+                 reflect-only? (query :reflect_only)]
+             (if char-id
+               (let [op-vars (@local/db :op-vars)]
+                 (local/reflect-op-var char-id)
+                 (if reflect-only?
+                   (. res sendStatus 200)
+                   (return-png res (str "./public/img/" (<? (create-cs-png char-id game))))))
+               (. res sendStatus 400)))
+           (catch js/Object e
+             (. res sendStatus 500)))))
+
+(defn- handle-reset-op-vars [req res]
+  (println "handle-reset-op-vars")
+  (go (try (do
+             (local/set-op-vars (local/default-db :op-vars))
+             (return-success res (str "op-vars reset.\n" (pretty-string (@local/db :op-vars)))))
+           (catch js/Object e
+             (. res sendStatus 500)))))
+
+;; Character variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- handle-reset-char-vars [req res]
+  (println "handle-reset-char-vars")
+  (go (try (do
+             (local/set-char-vars (local/default-db :char-vars))
+             (return-success res (str "char-vars reset.\n" (pretty-string (@local/db :char-vars)))))
+           (catch js/Object e
+             (. res sendStatus 500)))))
+
+(defn- handle-set-char-var [req res]
+  (println "handle-set-char-var")
+  (go (try (let [query   (js->clj (. req -query) :keywordize-keys true)
+                 _       (println "Received queries are " query)
+                 char-id (js/parseInt (query :char_id))
+                 var     (keyword (insanitize (query :var)))
+                 v       (js/parseInt (query :value))]
+             (local/set-char-var char-id var v)
+             (. res sendStatus 200))
+           (catch js/Object e
+             (. res sendStatus 500)))))
+
+;; Dice roll ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- handle-roll [req res]
+  (println "handle-roll")
+  (go (try (let [query   (js->clj (. req -query) :keywordize-keys true)
+                 dice    (query :dice)
+                 _       (println (str "queries {:dice " dice "}"))
+                 pip     (inc (rand-int (js/parseInt (str/join (rest dice)))))
+                 png-url (str "./public/img/dice/" dice "/" pip ".png")]
+             (return-png res png-url))
+           (catch js/Object e
+             (. res sendStatus 500)))))
 
 ;; Main ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -196,34 +249,34 @@
       (swap! counter inc)
       @counter)))
 
-(defn- return-200 [req res]
-  (. res writeHead 200 (clj->js {:Content-Type "application/json; charset=utf-8"}))
-  (. res end (. js/JSON stringify (clj->js {:status "ok"}))))
-
 (defn ^:dev/after-load main []
   (let [app (express.)]
 
-    (. app get "/status" return-200) ; for activator robot
-
-    (. app get "/reset" handle-reset)
-
+    ;; Global
     (. app get "/init" handle-init)
-
-    (. app get "/character-sheet" handle-charcter-sheet)
-
-    (. app get "/change-op-var" handle-change-op-var)
-
-    (. app get "/reflect-op-var" handle-reflect-op-var)
-
-    (. app get "/roll" handle-roll)
-
     (. app get "/activate" handle-activate)
+    (. app get "/deactivate" handle-deactivate)
+
+    ;; Character sheet
+    (. app get "/load-cs" handle-load-cs)
+    (. app get "/get-cs" handle-get-cs)
+
+    ;; Operation variables
+    (. app get "/change-op-var" handle-change-op-var)
+    (. app get "/reflect-op-var" handle-reflect-op-var)
+    (. app get "/reset-op-vars" handle-reset-op-vars)
+
+    ;; Character variables
+    (. app get "/reset-char-vars" handle-reset-char-vars)
+    (. app get "/set-char-var" handle-set-char-var)
+
+    ;; Dice roll
+    (. app get "/roll" handle-roll)
 
     (when (some? @server)
       (. @server close)
-      (println "Why the fuck did you kill the server!!?"))
-
-    (println (str "### You have re-loaded " (reload-counter) " times. ###"))
+      (println "Server reloaded"))
+    (println (str "### You have re-loaded the server " (reload-counter) " times. ###"))
 
     ;; Listen process.env.PORT or fixed port 55555
     (let [env-port (.. js/process -env -PORT)

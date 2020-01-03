@@ -59,8 +59,17 @@
       :sign  (->sign modded)
       modded)))
 
+(defn set-op-vars [v]
+  (swap! db assoc :op-vars v))
+
 (defn set-op-var [char-id var v]
   (swap! db assoc-in [:op-vars char-id var] v))
+
+(defn set-char-vars [v]
+  (swap! db assoc :char-vars v))
+
+(defn set-char-var [char-id var v]
+  (swap! db assoc-in [:char-vars char-id var] v))
 
 (defn reflect-op-var [char-id]
   (println "reflect-op-var")
@@ -76,3 +85,6 @@
 
 (defn activate []
   (swap! db assoc :ready? true))
+
+(defn deactivate []
+  (swap! db assoc :ready? false))
