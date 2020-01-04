@@ -185,14 +185,19 @@
   (go (try (let [query         (js->clj (. req -query) :keywordize-keys true)
                  char-id       (js/parseInt (query :char_id))
                  game          (keyword (query :game))
-                 reflect-only? (query :reflect_only)]
-             (if char-id
-               (let [op-vars (@local/db :op-vars)]
-                 (local/reflect-op-var char-id)
-                 (if reflect-only?
-                   (. res sendStatus 200)
-                   (return-png res (str "./public/img/" (<? (create-cs-png char-id game))))))
-               (. res sendStatus 400)))
+                 reflect-only? (query :reflect_only)
+                 data-list     (get @local/db :cs-data-list)]
+             (if (not-empty data-list)
+               (if char-id
+                 (if (<= 0 char-id (dec (count data-list)))
+                   (let [op-vars (@local/db :op-vars)]
+                     (local/reflect-op-var char-id)
+                     (if reflect-only?
+                       (. res sendStatus 200)
+                       (return-png res (str "./public/img/" (<? (create-cs-png char-id game))))))
+                   (return-png res "./public/img/common/vacant.png"))
+                 (. res sendStatus 400))
+               (. res sendStatus 412)))
            (catch js/Object e
              (. res sendStatus 500)))))
 
