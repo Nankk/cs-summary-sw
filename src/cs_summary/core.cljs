@@ -16,7 +16,8 @@
    [cs-summary.coc.png-maker :as coc-png]
    [cs-summary.db-local :as local]
    [cs-summary.db-remote :as remote]
-   [cljs.pprint :refer [pprint]]))
+   [cljs.pprint :refer [pprint]]
+   [cs-summary.util :as util]))
 
 ;; Private ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -153,6 +154,15 @@
 
 ;; Operation variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- too-quick? [char-id]
+  (println "(too-quick? [" char-id "])")
+  (let [last (get-in @local/db [:last-access-ms char-id])
+        thld (@local/db :interval-thld-ms)
+        now (util/current-time-ms)
+        diff (- now last)]
+    (local/set-access-ms char-id now)
+    (<= diff thld)))
+
 (defn- handle-change-op-var [req res]
   (println "handle-change-op-var")
   (go (try (let [query   (js->clj (. req -query) :keywordize-keys true)
@@ -162,7 +172,7 @@
                  var     (keyword (insanitize (query :var)))
                  game    (keyword (query :game))
                  cur-v   (get-in @local/db [:op-vars char-id var])
-                 changed (if (@local/db :ready?)
+                 changed (if (and (@local/db :ready?) (not (too-quick? char-id)))
                            (case type
                              :inc (local/changed-op-var var cur-v game 1)
                              :dec (local/changed-op-var var cur-v game -1)
@@ -206,6 +216,15 @@
   (go (try (do
              (local/set-op-vars (local/default-db :op-vars))
              (return-success res (str "op-vars reset.\n" (pretty-string (@local/db :op-vars)))))
+           (catch js/Object e
+             (. res sendStatus 500)))))
+
+(defn- handle-change-threshold [req res]
+  (println "handle-change-threshold")
+  (go (try (let [query (js->clj (. req -query) :keywordize-keys true)
+                 time  (js/parseInt (query :time))]
+             (local/set-interval-threshold time)
+             (return-success res (str "Interval threshold set.\n" (pretty-string (@local/db :interval-thld-ms)))))
            (catch js/Object e
              (. res sendStatus 500)))))
 
@@ -270,6 +289,7 @@
     (. app get "/change-op-var" handle-change-op-var)
     (. app get "/reflect-op-var" handle-reflect-op-var)
     (. app get "/reset-op-vars" handle-reset-op-vars)
+    (. app get "/change-threshold" handle-change-threshold)
 
     ;; Character variables
     (. app get "/reset-char-vars" handle-reset-char-vars)

@@ -2,14 +2,16 @@
   (:require [cs-summary.util :as util]
             [cs-summary.const :as const]))
 
-(def default-db {:ready?       false
-                 :cs-data-list []
-                 :op-vars      (vec (take 10 (repeat {:param   :hp
-                                                      :sign    :-
-                                                      :digit-3 0
-                                                      :digit-2 0
-                                                      :digit-1 0})))
-                 :char-vars    (vec (take 10 (repeat {:hp 0 :mp 0 :san 0})))})
+(def default-db {:ready?           false
+                 :cs-data-list     []
+                 :op-vars          (vec (take 10 (repeat {:param   :hp
+                                                          :sign    :-
+                                                          :digit-3 0
+                                                          :digit-2 0
+                                                          :digit-1 0})))
+                 :char-vars        (vec (take 10 (repeat {:hp 0 :mp 0 :san 0})))
+                 :last-access-ms   (vec (take 10 (repeat 0)))
+                 :interval-thld-ms 100})
 
 (def db (atom default-db))
 
@@ -21,6 +23,12 @@
 
 (defn set-cs-data-list [cs-data-list]
   (swap! db #(assoc % :cs-data-list cs-data-list)))
+
+(defn set-access-ms [char-id ms]
+  (swap! db assoc-in [:last-access-ms char-id] ms))
+
+(defn set-interval-threshold [ms]
+  (swap! db assoc :interval-thld-ms ms))
 
 (defn ->param [num game]
   (println "->param " num " " game)
