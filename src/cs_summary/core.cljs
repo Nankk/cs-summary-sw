@@ -201,7 +201,8 @@
                (if char-id
                  (if (<= 0 char-id (dec (count data-list)))
                    (let [op-vars (@local/db :op-vars)]
-                     (local/reflect-op-var char-id)
+                     (when (not (too-quick? char-id))
+                       (local/reflect-op-var char-id))
                      (if reflect-only?
                        (. res sendStatus 200)
                        (return-png res (str "./public/img/" (<? (create-cs-png char-id game))))))
