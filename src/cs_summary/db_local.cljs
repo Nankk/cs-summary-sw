@@ -11,7 +11,7 @@
                                                           :digit-1 0})))
                  :char-vars        (vec (take 10 (repeat {:hp 0 :mp 0 :san 0})))
                  :last-access-ms   (vec (take 10 (repeat 0)))
-                 :interval-thld-ms 250})
+                 :interval-thld-ms 100})
 
 (def db (atom default-db))
 
