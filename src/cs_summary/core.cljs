@@ -4,6 +4,7 @@
    ["stream" :as stream]
    ["fs" :as fs]
    ["puppeteer" :as ppt]
+   ["process" :as process]
    [clojure.string :as str]
    [cljs.core.async :as async :refer [>! <! go chan timeout go-loop]]
    [async-interop.interop :refer-macros [<p!]]
@@ -274,7 +275,7 @@
       (swap! counter inc)
       @counter)))
 
-(defn ^:dev/after-load main []
+(defn- ^:dev/after-load start-server []
   (let [app (express.)]
 
     ;; Global
@@ -310,3 +311,15 @@
       (reset! server (. app listen port,
                         #(. js/console log
                             (str "Listening on port " port)))))))
+
+(defn main []
+  ;; To catch the uncathcable exception thrown to main loop of Express
+  (. process on "uncaughtException"
+     (fn [err origin]
+       (println "###########################################")
+       (println "Caught exception: " err)
+       (println "Exception origin: " origin)
+       (println "###########################################")))
+
+  ;; Starting server
+  (start-server))
