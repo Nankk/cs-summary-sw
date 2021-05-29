@@ -1,1 +1,25 @@
-resources/package.json
+{
+    "name": "cs-summary-sw",
+    "version": "0.0.1",
+    "main": "index.js",
+    "private": true,
+    "scripts": {
+        "start": "node index.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "devDependencies": {
+        "shadow-cljs": "2.8.60",
+        "ws": "^7.4.6"
+    },
+    "dependencies": {
+        "express": "^4.17.1",
+        "google-auth-library": "^5.5.1",
+        "googleapis": "^45.0.0",
+        "puppeteer": "^2.0.0",
+        "react": "16.9.0",
+        "react-dom": "16.9.0",
+        "stream": "0.0.2",
+        "url-template": "^2.0.8",
+        "uuid": "^3.3.3"
+    }
+}
